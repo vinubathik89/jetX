@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Page with Firebase and Images</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        button {
+            width: 80%;
+            padding: 15px;
+            font-size: 18px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: none;
+        }
+        .stop-button {
+            background-color: red;
+            color: white;
+        }
+        .take-button {
+            background-color: blue;
+            color: white;
+        }
+        .update-button {
+            background-color: green;
+            color: white;
+            margin-bottom: 20px;
+        }
+        .image-container {
+            margin-bottom: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 10px;
+        }
+        input {
+            width: 80%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>JetX Controll Pannel</h1>
+
+    
+
+    <button class="stop-button" onclick="updateMainTask()">STOP</button>
+    <button class="take-button" onclick="updateSS()">TAKE</button>
+
+    <input type="text" id="textField1" placeholder="Enter cash value">
+    <button class="update-button" onclick="updateCash()">Update Cash</button>
+
+    <input type="text" id="textField2" placeholder="Enter odd value">
+    <button class="update-button" onclick="updateOdd()">Update Odd</button>
+    <div id="imageGallery"></div>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-storage.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyAjMTH05bxoCLRrltq31BaGsAHKQ8_aCcM",
+  authDomain: "jet-x-d9e7e.firebaseapp.com",
+  databaseURL: "https://jet-x-d9e7e-default-rtdb.firebaseio.com",
+  projectId: "jet-x-d9e7e",
+  storageBucket: "jet-x-d9e7e.appspot.com",
+  messagingSenderId: "1063204966889",
+  appId: "1:1063204966889:web:2f3feb77c31f72b812fb78",
+  measurementId: "G-3S4GF0BTSF"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        var database = firebase.database();
+        var storage = firebase.storage();
+
+        // Function to update "mainTask" when STOP is clicked
+        function updateMainTask() {
+            database.ref('test').update({
+                mainTask: 1
+            }).then(() => {
+                alert("mainTask updated to 1");
+            }).catch((error) => {
+                alert("Error: " + error.message);
+            });
+        }
+
+        // Function to update "SS" when TAKE is clicked
+        function updateSS() {
+            database.ref('test').update({
+                SS: 1
+            }).then(() => {
+                alert("SS updated to 1");
+            }).catch((error) => {
+                alert("Error: " + error.message);
+            });
+        }
+
+        // Function to update "cash" with the value from textField1
+        function updateCash() {
+            var cashValue = parseFloat(document.getElementById('textField1').value);
+            if (!isNaN(cashValue)) {
+                database.ref('test').update({
+                    cash: cashValue
+                }).then(() => {
+                    alert("Cash updated to " + cashValue);
+                }).catch((error) => {
+                    alert("Error: " + error.message);
+                });
+            } else {
+                alert("Please enter a valid number for cash.");
+            }
+        }
+
+        // Function to update "odd" with the value from textField2
+        function updateOdd() {
+            var oddValue = parseFloat(document.getElementById('textField2').value);
+            if (!isNaN(oddValue)) {
+                database.ref('test').update({
+                    odd: oddValue
+                }).then(() => {
+                    alert("Odd updated to " + oddValue);
+                }).catch((error) => {
+                    alert("Error: " + error.message);
+                });
+            } else {
+                alert("Please enter a valid number for odd.");
+            }
+        }
+
+        // Function to list all images in the /screenshots folder
+        function listImages() {
+            var storageRef = storage.ref('screenshots');
+            var imageGallery = document.getElementById('imageGallery');
+            imageGallery.innerHTML = ''; // Clear the gallery before loading new data
+
+            // List all files in the /screenshots folder
+            storageRef.listAll().then(function(result) {
+                result.items.forEach(function(imageRef) {
+                    displayImage(imageRef);
+                });
+            }).catch(function(error) {
+                console.error("Error listing images: ", error);
+            });
+        }
+
+        // Function to display each image and its delete button
+        function displayImage(imageRef) {
+            imageRef.getDownloadURL().then(function(url) {
+                // Create a container for the image and delete button
+                var imageContainer = document.createElement('div');
+                imageContainer.classList.add('image-container');
+
+                // Create an image element
+                var img = document.createElement('img');
+                img.src = url;
+
+                // Create a delete button
+                var deleteButton = document.createElement('button');
+                deleteButton.textContent = "Delete";
+                deleteButton.onclick = function() {
+                    deleteImage(imageRef);
+                };
+
+                // Append the image and button to the container
+                imageContainer.appendChild(img);
+                imageContainer.appendChild(deleteButton);
+
+                // Append the container to the gallery
+                document.getElementById('imageGallery').appendChild(imageContainer);
+            }).catch(function(error) {
+                console.error("Error getting image URL: ", error);
+            });
+        }
+
+        // Function to delete an image
+        function deleteImage(imageRef) {
+            imageRef.delete().then(function() {
+                alert("Image deleted successfully!");
+                listImages(); // Refresh the image list after deletion
+            }).catch(function(error) {
+                alert("Error deleting image: " + error.message);
+            });
+        }
+
+        // Load images when the page loads
+        window.onload = function() {
+            listImages();
+        };
+    </script>
+
+</body>
+</html>
